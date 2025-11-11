@@ -6,8 +6,8 @@ function emptyStringToNull(value: any) {
 
 // --- NOVO HELPER ---
 // Esta função vai formatar nossas datas
-function formatActivityDates(activity: any) {
-  if (!activity) return activity;
+function formatLinkDates(link: any) {
+  if (!link) return link;
 
   const options: Intl.DateTimeFormatOptions = {
     day: '2-digit',
@@ -20,17 +20,13 @@ function formatActivityDates(activity: any) {
 
   // Retorna o objeto original, mais as novas colunas formatadas
   return {
-    ...activity,
-    created_at_formatted: activity.created_at 
-      ? new Date(activity.created_at).toLocaleString('pt-BR', options) 
+    ...link,
+    created_at_formatted: link.created_at 
+      ? new Date(link.created_at).toLocaleString('pt-BR', options) 
       : null,
     
-    updated_at_formatted: activity.updated_at
-      ? new Date(activity.updated_at).toLocaleString('pt-BR', options)
-      : null,
-
-    planned_at_formatted: activity.planned_at
-      ? new Date(activity.planned_at).toLocaleString('pt-BR', options)
+    updated_at_formatted: link.updated_at
+      ? new Date(link.updated_at).toLocaleString('pt-BR', options)
       : null
   };
 }
@@ -40,43 +36,42 @@ export default defineEventHandler(async (event) => {
   const method = event.req.method
 
   if (method === 'GET') {
-    const { task_id } = getQuery(event)
-    let query = supabase.from('activities').select('*').order('created_at', { ascending: false })
+    const { profile_id, year, month } = getQuery(event)
+    let query = supabase.from('links').select('*').order('created_at', { ascending: false })
 
-    if (task_id) {
-      query = query.eq('task_id', task_id as string)
+    if (profile_id) {
+      query = query.eq('profile_id', profile_id as string)
     }
 
     const { data, error } = await query
     if (error) {
       throw createError({ statusCode: 500, statusMessage: error.message })
     }
-
+    
     // --- NOVO: FORMATAÇÃO ---
-    const formattedData = data ? data.map(formatActivityDates) : [];
+    const formattedData = data ? data.map(formatLinkDates) : [];
     return formattedData; // <-- Retorna os dados formatados
     // --- FIM DA FORMATAÇÃO ---
   }
 
   if (method === 'POST') {
     const body = await readBody(event)
-    let { name, planned_at, description, task_id } = body
+    let { title, description, link } = body
 
-    if (!name) {
-      throw createError({ statusCode: 400, statusMessage: 'name is required' })
+    if (!title) {
+      throw createError({ statusCode: 400, statusMessage: 'o título é requerido' })
+    }
+    if (!link) {
+      throw createError({ statusCode: 400, statusMessage: 'O link é requerido' })
     }
 
-    if (!task_id) {
-      throw createError({ statusCode: 400, statusMessage: 'task_id is required' })
-    }
-
-    name = emptyStringToNull(name)
+    title = emptyStringToNull(title)
     description = emptyStringToNull(description)
-    // (Você pode adicionar sua função toISODate aqui se precisar converter planned_at)
+    link = emptyStringToNull(link)
 
     const { data, error } = await supabase
-      .from('activities')
-      .insert([{ name, description, planned_at, task_id }])
+      .from('links')
+      .insert([{ title, description, link }])
       .select()
       .single()
 
@@ -85,12 +80,12 @@ export default defineEventHandler(async (event) => {
     }
 
     // --- NOVO: FORMATAÇÃO ---
-    const formattedData = formatActivityDates(data);
+    const formattedData = formatLinkDates(data);
     // --- FIM DA FORMATAÇÃO ---
 
     return {
       data: formattedData, // <-- Retorna o item formatado
-      message: 'Atividade da tarefa criada com sucesso',
+      message: 'Link criado com sucesso',
       status: true
     }
   }

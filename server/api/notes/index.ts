@@ -4,6 +4,34 @@ function emptyStringToNull(value: any) {
   return value === '' ? null : value
 }
 
+// --- NOVO HELPER ---
+// Esta função vai formatar nossas datas
+function formatNoteDates(note: any) {
+  if (!note) return note;
+
+  const options: Intl.DateTimeFormatOptions = {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false // Formato 24h
+  };
+
+  // Retorna o objeto original, mais as novas colunas formatadas
+  return {
+    ...note,
+    created_at_formatted: note.created_at 
+      ? new Date(note.created_at).toLocaleString('pt-BR', options) 
+      : null,
+    
+    updated_at_formatted: note.updated_at
+      ? new Date(note.updated_at).toLocaleString('pt-BR', options)
+      : null
+  };
+}
+// --- FIM DO HELPER ---
+
 export default defineEventHandler(async (event) => {
   const method = event.req.method
 
@@ -40,7 +68,11 @@ export default defineEventHandler(async (event) => {
     if (error) {
       throw createError({ statusCode: 500, statusMessage: error.message })
     }
-    return data
+    
+    // --- NOVO: FORMATAÇÃO ---
+    const formattedData = data ? data.map(formatNoteDates) : [];
+    return formattedData; // <-- Retorna os dados formatados
+    // --- FIM DA FORMATAÇÃO ---
   }
 
   if (method === 'POST') {
@@ -65,8 +97,13 @@ export default defineEventHandler(async (event) => {
     if (error) {
       throw createError({ statusCode: 500, statusMessage: error.message })
     }
+
+    // --- NOVO: FORMATAÇÃO ---
+    const formattedData = formatNoteDates(data);
+    // --- FIM DA FORMATAÇÃO ---
+    
     return {
-      data,
+      data: formattedData, // <-- Retorna o item formatado
       message: 'Nota criada com sucesso',
       status: true
     }

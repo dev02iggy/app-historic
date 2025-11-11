@@ -9,6 +9,7 @@ const navLinks = ref([
     { label: 'Notas', icon: 'mdi:newspaper', url: '/notas' },
     { label: 'Tarefas', icon: 'mdi:clipboard-check', url: '/tarefas' },
     { label: 'Roadmaps', icon: 'mdi:road', url: '/roadmaps' },
+    { label: 'Links', icon: 'mdi:link', url: '/links' },
 ])
 </script>
 

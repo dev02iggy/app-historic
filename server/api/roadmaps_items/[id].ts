@@ -4,6 +4,7 @@ function emptyStringToNull(value: any) {
   return value === '' ? null : value
 }
 
+// Esta função está correta (Front -> Banco)
 function toISODate(value: any) {
   if (!value) return null;
 
@@ -22,6 +23,50 @@ function toISODate(value: any) {
   if (isNaN(d.getTime())) return null;
   return d.toISOString().substring(0, 10);
 }
+
+// --- NOVO HELPER (Banco -> Front) ---
+// Esta função vai formatar nossas datas
+function formatItemDates(item: any) {
+  if (!item) return item;
+
+  const options: Intl.DateTimeFormatOptions = {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false // Formato 24h
+  };
+
+  // Retorna o objeto original, mais as novas colunas formatadas
+  return {
+    ...item,
+    created_at_formatted: item.created_at 
+      ? new Date(item.created_at).toLocaleString('pt-BR', options) 
+      : null,
+    
+    updated_at_formatted: item.updated_at
+      ? new Date(item.updated_at).toLocaleString('pt-BR', options)
+      : null,
+
+    failure_at_formatted: item.failure_at
+      ? new Date(item.failure_at).toLocaleString('pt-BR', options)
+      : null,
+
+    paused_at_formatted: item.paused_at
+      ? new Date(item.paused_at).toLocaleString('pt-BR', options)
+      : null,
+
+    finished_at_formatted: item.finished_at
+      ? new Date(item.finished_at).toLocaleString('pt-BR', options)
+      : null,
+      
+    planned_at_formatted: item.planned_at
+      ? new Date(item.planned_at).toLocaleString('pt-BR', options)
+      : null
+  };
+}
+// --- FIM DO HELPER ---
 
 export default defineEventHandler(async (event) => {
   const method = event.req.method
@@ -48,8 +93,14 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    return data
+    // --- NOVO: FORMATAÇÃO ---
+    // 'data' é um objeto único
+    const formattedData = formatItemDates(data);
+    return formattedData; // <-- Retorna o dado formatado
+    // --- FIM DA FORMATAÇÃO ---
   }
+
+  // (Aqui você adicionaria seus métodos PATCH e DELETE no futuro)
 
   throw createError({
     statusCode: 405,

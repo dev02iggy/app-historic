@@ -4,9 +4,7 @@ function emptyStringToNull(value: any) {
   return value === '' ? null : value
 }
 
-// Esta função (toISODate) está correta.
-// Ela converte do front (DD/MM/YYYY) para o banco (ISO), 
-// usada no PATCH.
+// Esta função está correta (Front -> Banco)
 function toISODate(value: any) {
   if (!value) return null;
 
@@ -26,10 +24,10 @@ function toISODate(value: any) {
   return d.toISOString().substring(0, 10);
 }
 
-// --- NOVO HELPER (O mesmo do outro arquivo) ---
-// Esta função converte do banco (ISO) para o front (DD/MM/YYYY HH:MM)
-function formatTaskDates(task: any) {
-  if (!task) return task;
+// --- NOVO HELPER (Banco -> Front) ---
+// Esta função vai formatar nossas datas
+function formatLinkDates(link: any) {
+  if (!link) return link;
 
   const options: Intl.DateTimeFormatOptions = {
     day: '2-digit',
@@ -40,19 +38,19 @@ function formatTaskDates(task: any) {
     hour12: false // Formato 24h
   };
 
-  // Retorna o objeto original, mais as novas colunas formatadas
   return {
-    ...task,
-    created_at_formatted: task.created_at 
-      ? new Date(task.created_at).toLocaleString('pt-BR', options) 
+    ...link,
+    created_at_formatted: link.created_at 
+      ? new Date(link.created_at).toLocaleString('pt-BR', options) 
       : null,
     
-    updated_at_formatted: task.updated_at
-      ? new Date(task.updated_at).toLocaleString('pt-BR', options)
+    updated_at_formatted: link.updated_at
+      ? new Date(link.updated_at).toLocaleString('pt-BR', options)
       : null,
       
-    planned_at_formatted: task.planned_at
-      ? new Date(task.planned_at).toLocaleString('pt-BR', options)
+    // O 'planned_at' está na sua lógica do PATCH, então formatamos ele também
+    planned_at_formatted: link.planned_at
+      ? new Date(link.planned_at).toLocaleString('pt-BR', options)
       : null
   };
 }
@@ -65,14 +63,14 @@ export default defineEventHandler(async (event) => {
   if (!id) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'ID da tarefa é obrigatório'
+      statusMessage: 'ID do link é obrigatório'
     })
   }
 
   // --- GET (LEITURA) ---
   if (method === 'GET') {
     const { data, error } = await supabase
-      .from('tasks')
+      .from('links')
       .select('*')
       .eq('id', id)
       .single()
@@ -80,13 +78,12 @@ export default defineEventHandler(async (event) => {
     if (error || !data) {
       throw createError({
         statusCode: 404,
-        statusMessage: 'Tarefa não foi encontrada'
+        statusMessage: 'Link não foi encontrado'
       })
     }
 
     // --- NOVO: FORMATAÇÃO ---
-    // 'data' é um objeto único
-    const formattedData = formatTaskDates(data);
+    const formattedData = formatLinkDates(data);
     return formattedData; // <-- Retorna o dado formatado
     // --- FIM DA FORMATAÇÃO ---
   }
@@ -97,7 +94,7 @@ export default defineEventHandler(async (event) => {
     const updateData: { [key: string]: any } = {};
 
     // ... (Sua lógica de 'updateData' está correta) ...
-    const textFields = ['description', 'type', 'type_formatted', 'observation', 'note'];
+    const textFields = ['description', 'link'];
     for (const field of textFields) {
         if (body[field] !== undefined) {
             updateData[field] = emptyStringToNull(body[field]);
@@ -109,10 +106,10 @@ export default defineEventHandler(async (event) => {
             updateData[field] = toISODate(body[field]);
         }
     }
-    if (body.name !== undefined) {
-        updateData.name = emptyStringToNull(body.name);
-        if (!updateData.name) {
-            throw createError({ statusCode: 400, statusMessage: 'O nome não pode ser vazio' });
+    if (body.title !== undefined) {
+        updateData.title = emptyStringToNull(body.title);
+        if (!updateData.title) {
+            throw createError({ statusCode: 400, statusMessage: 'O título não pode ser vazio' });
         }
     }
     if (Object.keys(updateData).length === 0) {
@@ -123,7 +120,7 @@ export default defineEventHandler(async (event) => {
     }
     
     const { data, error } = await supabase
-      .from('tasks')
+      .from('links')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -133,21 +130,21 @@ export default defineEventHandler(async (event) => {
       console.error('Supabase update error:', error.message);
       throw createError({ statusCode: 500, statusMessage: error.message });
     }
+    
     if (!data) {
       throw createError({
         statusCode: 404,
-        statusMessage: 'Tarefa não encontrada para atualizar'
+        statusMessage: 'Link não encontrado para atualizar'
       });
     }
 
     // --- NOVO: FORMATAÇÃO ---
-    // 'data' é o objeto único que acabou de ser atualizado
-    const formattedData = formatTaskDates(data);
+    const formattedData = formatLinkDates(data);
     
     // Sucesso!
     return {
       data: formattedData, // <-- Retorna o dado formatado
-      message: 'Tarefa atualizada com sucesso',
+      message: 'Link atualizado com sucesso',
       status: true
     };
     // --- FIM DA FORMATAÇÃO ---

@@ -116,7 +116,7 @@
                                                     <div class="flex flex-col">
                                                         <div class="flex items-center justify-between">
                                                             <span class="text-sm mb-1 font-[600]">{{ note.title }}</span>
-                                                            <span class="text-[0.8rem] mb-1 font-[600]">{{ note.created_at }}</span>
+                                                            <span class="text-[0.8rem] mb-1 font-[600]">{{ note.created_at_formatted }}</span>
                                                         </div>
                                                         <p class="text-sm mb-1">{{ note.details }}</p>
                                                     </div>

@@ -23,6 +23,34 @@
         }
     }
 
+    const checkDateStatus = (supabaseTimestamp: any) => {
+        if (!supabaseTimestamp) {
+            return '';
+        }
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const targetDate = new Date(supabaseTimestamp);
+        targetDate.setHours(0, 0, 0, 0);
+        // 3. Calcula a diferença em milissegundos
+        const diffMs = targetDate.getTime() - now.getTime();
+
+        const msPerDay = 1000 * 60 * 60 * 24;
+        const diffDays = Math.round(diffMs / msPerDay);
+
+        if (diffDays <= 0) {
+            // Se a diferença for 0 (hoje) ou negativa (passado)
+            return 'bg-red-300';
+        } 
+        else if (diffDays <= 7) {
+            // Se for entre 1 e 7 dias no futuro
+            return 'bg-red-100';
+        } 
+        else {
+            // Se for mais de 7 dias no futuro
+            return 'bg-orange-300';
+        }
+    }
+
     onBeforeMount(() => {
         params.changeRouteCurrent('roadmaps')
     })
@@ -54,14 +82,17 @@
                                     <div class="flex flex-col">
                                         <div class="flex items-center justify-between">
                                             <span class="mb-1 font-[600]">{{ roadmap.name }}</span>
-                                            <span class="text-[0.7rem] mb-1 font-[600]">Criado em {{ roadmap.created_at }}</span>
+                                            <span class="text-[0.7rem] mb-1 font-[600]">Criado em {{ roadmap.created_at_formatted }}</span>
                                         </div>
                                         <p class="text-sm mb-1">{{ roadmap.description }}</p>
                                         <!--<div class="flex">
                                             <span class="bg-red-600 text-white text-[0.8rem]" style="padding: 1px 10px;">Importância</span>
                                         </div>-->
                                         <div v-if="roadmap.updated_at" class="flex flex-col">
-                                            <span class="text-[0.75rem]">Última vez atualizado: <span class="font-[600]">{{ roadmap.updated_at }}</span></span>
+                                            <span class="text-[0.75rem]">Última vez atualizado: <span class="font-[600]">{{ roadmap.updated_at_formatted }}</span></span>
+                                        </div>
+                                        <div v-if="roadmap.date_end_at" class="flex flex-col items-start mt-1">
+                                            <span class="text-[0.75rem] px-2 py-1 rounded" :class="`${checkDateStatus(roadmap.date_end_at_formatted)}`">Data final: <span class="font-[600]">{{ roadmap.date_end_at_formatted }}</span></span>
                                         </div>
                                     </div>
                                 </NuxtLink>

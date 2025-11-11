@@ -1,4 +1,4 @@
-import supabase from '../../utils/supabase'
+import supabase from '../../../utils/supabase'
 
 function emptyStringToNull(value: any) {
   return value === '' ? null : value
@@ -69,62 +69,16 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // --- GET (LEITURA) ---
-  if (method === 'GET') {
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('id', id)
-      .single()
-
-    if (error || !data) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: 'Tarefa não foi encontrada'
-      })
-    }
-
-    // --- NOVO: FORMATAÇÃO ---
-    // 'data' é um objeto único
-    const formattedData = formatTaskDates(data);
-    return formattedData; // <-- Retorna o dado formatado
-    // --- FIM DA FORMATAÇÃO ---
-  }
-
   // --- PATCH (ATUALIZAÇÃO PARCIAL) ---
   if (method === 'PATCH') {
     const body = await readBody(event);
     const updateData: { [key: string]: any } = {};
 
-    // ... (Sua lógica de 'updateData' está correta) ...
-    const textFields = ['description', 'type', 'type_formatted', 'observation', 'note'];
-    for (const field of textFields) {
-        if (body[field] !== undefined) {
-            updateData[field] = emptyStringToNull(body[field]);
-        }
-    }
-    const dateFields = ['planned_at'];
-    for (const field of dateFields) {
-        if (body[field] !== undefined) {
-            updateData[field] = toISODate(body[field]);
-        }
-    }
-    if (body.name !== undefined) {
-        updateData.name = emptyStringToNull(body.name);
-        if (!updateData.name) {
-            throw createError({ statusCode: 400, statusMessage: 'O nome não pode ser vazio' });
-        }
-    }
-    if (Object.keys(updateData).length === 0) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Nenhum dado para atualização foi fornecido'
-      });
-    }
+    const date = new Date();
     
     const { data, error } = await supabase
       .from('tasks')
-      .update(updateData)
+      .update({ is_finished: true, is_closed: true, finished_at: date })
       .eq('id', id)
       .select()
       .single();
@@ -147,7 +101,7 @@ export default defineEventHandler(async (event) => {
     // Sucesso!
     return {
       data: formattedData, // <-- Retorna o dado formatado
-      message: 'Tarefa atualizada com sucesso',
+      message: 'Tarefa finalizada com sucesso',
       status: true
     };
     // --- FIM DA FORMATAÇÃO ---

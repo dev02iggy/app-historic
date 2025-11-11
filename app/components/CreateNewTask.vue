@@ -266,7 +266,7 @@ export default defineComponent({
                   </div>-->
                   <div class="col-span-1 mt-1">
                     <div class="flex flex-col relative mt-1">
-                      <label v-if="selectedDate" class="absolute top-[-11px] left-[5px] text-gray-500" for="" style="z-index: 100;">Data final:</label>
+                      <label class="text-gray-500" for="" style="z-index: 100;">Data final:</label>
                       <input v-model="selectedDate" type="datetime-local" name="" id="" class="mt-1 border-2 border-gray-200 rounded bg-gray-200 py-1 pl-2 pr-1">
                     </div>
                   </div>

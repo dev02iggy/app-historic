@@ -1,10 +1,8 @@
 <script setup lang="ts">
     import { ref } from 'vue';
     
-    // 1. Pegamos o 'supabase' do seu plugin do Nuxt
-    // Esta é a instância SEGURA do frontend (com anon_key)
     const { $supabase } = useNuxtApp();
-    
+    const { notify } = useNotification();
     const router = useRouter()
     const isLoginModal = ref<boolean>(false)
     const formdata = ref<any>({
@@ -15,27 +13,31 @@
     })
     const isShowPassword = ref<boolean>(false)
     const isShowPasswordTwo = ref<boolean>(false)
-    const isLoading = ref<boolean>(false); // Para desabilitar botões
+    const isLoading = ref<boolean>(false);
 
-    // --- ESTA É A FUNÇÃO 'send' COMPLETA ---
     const send = async () => {
         isLoading.value = true;
         
-        // Validação 1: Senhas conferem?
         if (formdata.value.password !== formdata.value.passwordTwo) {
-            alert('As senhas não conferem!');
+            notify({
+                title: "Erro ao cadastrar:",
+                text: "As senhas não conferem!",
+                type: 'error'
+            });
             isLoading.value = false;
             return;
         }
-        // Validação 2: Campos preenchidos?
         if (!formdata.value.email || !formdata.value.password || !formdata.value.name) {
-            alert('Por favor, preencha todos os campos.');
+            notify({
+                title: "Erro ao cadastrar:",
+                text: "Por favor, preencha todos os campos.",
+                type: 'error'
+            });
             isLoading.value = false;
             return;
         }
 
         try {
-            // --- Etapa 1: Chamar o Auth (Frontend) ---
             const { data: authData, error: authError } = await $supabase.auth.signUp({
                 email: formdata.value.email,
                 password: formdata.value.password,
@@ -43,54 +45,45 @@
 
             if (authError) throw authError;
 
-            // Caso 1: Confirmação de e-mail está ATIVADA
-            if (!authData.session) {
-                // O usuário foi criado, mas precisa confirmar o e-mail
-                alert('Conta criada! Por favor, verifique seu e-mail para confirmar a conta antes de fazer o login.');
-                isLoading.value = false;
-                isLoginModal.value = true; // Abre o modal de login
-                return;
-            }
-
-            // Caso 2: Confirmação de e-mail está DESATIVADA
-            // O usuário foi criado E já está logado (tem uma sessão)
-            // Agora podemos chamar o backend para criar o 'profile'
-
-            // --- Etapa 2: Chamar nossa API de Backend ---
             const response = await fetch('/api/auth/register', { 
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     // ESSENCIAL: Envia o token para provar quem somos
-                    'Authorization': `Bearer ${authData.session.access_token}` 
+                    'Authorization': `Bearer ${authData.session?.access_token}` 
                 },
                 body: JSON.stringify({
                     name: formdata.value.name,
                     email: formdata.value.email
-                    // Note que não enviamos o user_id, o backend pega do token
                 })
             });
 
             if (!response.ok) {
-                // Se o backend der erro (ex: 401, 500)
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Erro ao criar o perfil no backend.');
             }
 
-            // --- Sucesso Total! ---
-            alert('Conta criada com sucesso! Você já está logado.');
-            goRouter(); // Navega para /tarefas
+            notify({
+                title: "Parabéns",
+                text: "Conta criada com sucesso!",
+                type: 'success'
+            });
+            goRouter(`/tarefas`); // Navega para /tarefas
 
         } catch (error: any) {
-            console.error('Erro no cadastro:', error);
+            notify({
+                title: "Erro ao cadastrar:",
+                text: error,
+                type: 'error'
+            });
             alert(error.message || 'Ocorreu um erro.');
         } finally {
             isLoading.value = false;
         }
     }
     
-    const goRouter = () => {
-        router.push(`/tarefas`)
+    const goRouter = (url: string) => {
+        router.push(url)
     }
 </script>
 
@@ -145,7 +138,7 @@
                                 CORREÇÃO AQUI:
                                 O botão "Login" deve abrir o modal
                             -->
-                            <Button @click.prevent="isLoginModal = true" label="Já tenho conta (Login)" :isFlat="false" :disabled="isLoading" />
+                            <Button @click.prevent="goRouter('/')" label="Já tenho conta (Login)" :isFlat="false" :disabled="isLoading" />
                         </div>
                     </div>
                 </form>

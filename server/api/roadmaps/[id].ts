@@ -4,6 +4,7 @@ function emptyStringToNull(value: any) {
   return value === '' ? null : value
 }
 
+// Esta função está correta (Front -> Banco)
 function toISODate(value: any) {
   if (!value) return null;
 
@@ -22,6 +23,37 @@ function toISODate(value: any) {
   if (isNaN(d.getTime())) return null;
   return d.toISOString().substring(0, 10);
 }
+
+// --- NOVO HELPER (Banco -> Front) ---
+// Esta função vai formatar nossas datas
+function formatRoadmapDates(roadmap: any) {
+  if (!roadmap) return roadmap;
+
+  const options: Intl.DateTimeFormatOptions = {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false // Formato 24h
+  };
+
+  return {
+    ...roadmap,
+    created_at_formatted: roadmap.created_at 
+      ? new Date(roadmap.created_at).toLocaleString('pt-BR', options) 
+      : null,
+    
+    updated_at_formatted: roadmap.updated_at
+      ? new Date(roadmap.updated_at).toLocaleString('pt-BR', options)
+      : null,
+      
+    date_end_at_formatted: roadmap.date_end_at
+      ? new Date(roadmap.date_end_at).toLocaleString('pt-BR', options)
+      : null
+  };
+}
+// --- FIM DO HELPER ---
 
 export default defineEventHandler(async (event) => {
   const method = event.req.method
@@ -48,8 +80,14 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    return data
+    // --- NOVO: FORMATAÇÃO ---
+    // 'data' é um objeto único
+    const formattedData = formatRoadmapDates(data);
+    return formattedData; // <-- Retorna o dado formatado
+    // --- FIM DA FORMATAÇÃO ---
   }
+
+  // (Aqui você adicionaria seus métodos PATCH e DELETE no futuro)
 
   throw createError({
     statusCode: 405,

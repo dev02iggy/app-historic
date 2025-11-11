@@ -148,7 +148,6 @@
             <div class="col-span-1 mt-4">
                 <h2 class="text-center text-2xl font-[600]">Tarefas</h2>
             </div>
-            {{ authStore.user }}
             <div class="col-span-1 mt-4">
                 <div class="flex justify-center items-center">
                     <Button @click="isCreateNewTask = true" label="Criar tarefa" color="bg-green-700 text-white" />
@@ -180,7 +179,7 @@
                                             <p :class="layoutsOfCard[group.layout].description">{{ task.description }}</p>
                                             <div class="flex justify-between items-center mt-2">
                                                 <span :class="layoutsOfCard[group.layout].notes" class="font-[500] bg-orange-300 px-1 rounded">{{ task.note }}</span>
-                                                <span :class="layoutsOfCard[group.layout].notes" class="font-[300]">faltam 22 dias</span>
+                                                <span :class="layoutsOfCard[group.layout].notes" class="font-[300]">{{ task.planned_at_formatted }}</span>
                                             </div>
                                         </div>
                                         <button @click="openTask(task)" class="absolute top-[5px] right-[5px]"><Icon name="mdi:file-search" /></button>

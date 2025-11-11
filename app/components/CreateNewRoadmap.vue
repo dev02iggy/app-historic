@@ -33,6 +33,28 @@ export default defineComponent({
       date_end_at: null,
       customer_impact: null
     })
+    const selectedDate = ref<any>('')
+
+    const formatUTCToLocalInput = (utcString: any) => {
+      if (!utcString) {
+          return null; // Retorna nulo se não houver data
+      }
+      const date = new Date(utcString + 'Z');
+
+      if (isNaN(date.getTime())) {
+          console.error('Data inválida recebida:', utcString);
+          return null; // Data inválida
+      }
+
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0'); // Mês é 0-11
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
     const closeModal = () => {
       isOpen.value = false;
       emit('update:modelValue', false);
@@ -57,7 +79,7 @@ export default defineComponent({
         body: JSON.stringify({
           name: formdata.value.name,
           description: formdata.value.description,
-          date_end_at: formdata.value.date_end_at
+          date_end_at: selectedDate.value ? selectedDate.value : null,
         }),
       })
 
@@ -69,6 +91,7 @@ export default defineComponent({
         date_end_at: null,
         customer_impact: null
       }
+      selectedDate.value = ``;
       emit('created')
       emit('update:modelValue', false);
     }
@@ -87,7 +110,8 @@ export default defineComponent({
       goRouter,
       formdata,
       newId,
-      createRoadmap
+      createRoadmap,
+      selectedDate,
     };
   },
 });
@@ -139,8 +163,8 @@ export default defineComponent({
                   </div>
                   <div class="col-span-1 mt-1">
                     <div class="flex flex-col relative mt-1">
-                      <label v-if="formdata.date_end_at" class="absolute top-[-11px] left-[5px] text-gray-500" for="" style="z-index: 100;">Data final:</label>
-                      <input v-model="formdata.date_end_at" type="text" name="" id="" placeholder="Data final" class="mt-1 border-2 border-gray-200 rounded bg-gray-200 py-1 pl-2 pr-1">
+                      <label class="text-gray-500" for="" style="z-index: 100;">Data final:</label>
+                      <input v-model="selectedDate" type="datetime-local" name="" id="" class="mt-1 border-2 border-gray-200 rounded bg-gray-200 py-1 pl-2 pr-1">
                     </div>
                   </div>
                   <div class="col-span-1 mt-4">

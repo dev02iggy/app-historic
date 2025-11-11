@@ -1,6 +1,7 @@
 <script setup lang="ts">
     // (Seu script continua o mesmo)
     import { useParams } from '../stores/params.js';
+    const { $supabase } = useNuxtApp();
 
     const isModal = ref<boolean>(false);
     const router = useRouter();
@@ -8,6 +9,16 @@
 
     const navigation = (url: string) => {
         router.push(url)
+    }
+
+    const logout = async () => {
+        try {
+            await $supabase.auth.signOut()
+            router.push('/')
+        } catch(error) {
+            console.log(error)
+        }
+        
     }
 </script>
 
@@ -26,7 +37,8 @@
                 <ButtonIcon @click="navigation(`/notas`)" icon="mdi:newspaper" label="Notas" color="border-white border-1" iconClass="" class="mr-3" />
                 <ButtonIcon @click="navigation(`/tarefas`)" icon="mdi:clipboard-check" label="Tarefas" color="border-white border-1" iconClass="" class="mr-3" />
                 <ButtonIcon @click="navigation(`/roadmaps`)" icon="mdi:road" label="Roadmaps" color="border-white border-1" iconClass="" class="mr-3" />
-                <ButtonIcon @click="navigation(`/`)" icon="mdi:reply-outline" label="Sair" color="border-white border-1" iconClass="" class="mr-3" />
+                <ButtonIcon @click="navigation(`/links`)" icon="mdi:link" label="Links" color="border-white border-1" iconClass="" class="mr-3" />
+                <ButtonIcon @click="logout()" icon="mdi:reply-outline" label="Sair" color="border-white border-1" iconClass="" class="mr-3" />
                 <ButtonIcon @click="navigation(`/configuracao`)" icon="mdi:cog" color="border-white border-1" iconClass="" />
             </div>
         </header>

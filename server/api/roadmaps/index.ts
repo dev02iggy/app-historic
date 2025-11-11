@@ -4,6 +4,39 @@ function emptyStringToNull(value: any) {
   return value === '' ? null : value
 }
 
+// --- NOVO HELPER ---
+// Esta função vai formatar nossas datas
+function formatRoadmapDates(roadmap: any) {
+  if (!roadmap) return roadmap;
+
+  const options: Intl.DateTimeFormatOptions = {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false // Formato 24h
+  };
+
+  // Retorna o objeto original, mais as novas colunas formatadas
+  return {
+    ...roadmap,
+    created_at_formatted: roadmap.created_at 
+      ? new Date(roadmap.created_at).toLocaleString('pt-BR', options) 
+      : null,
+    
+    updated_at_formatted: roadmap.updated_at
+      ? new Date(roadmap.updated_at).toLocaleString('pt-BR', options)
+      : null,
+      
+    // Novo campo deste arquivo
+    date_end_at_formatted: roadmap.date_end_at
+      ? new Date(roadmap.date_end_at).toLocaleString('pt-BR', options)
+      : null
+  };
+}
+// --- FIM DO HELPER ---
+
 export default defineEventHandler(async (event) => {
   const method = event.req.method
 
@@ -19,7 +52,11 @@ export default defineEventHandler(async (event) => {
     if (error) {
       throw createError({ statusCode: 500, statusMessage: error.message })
     }
-    return data
+    
+    // --- NOVO: FORMATAÇÃO ---
+    const formattedData = data ? data.map(formatRoadmapDates) : [];
+    return formattedData; // <-- Retorna os dados formatados
+    // --- FIM DA FORMATAÇÃO ---
   }
 
   if (method === 'POST') {
@@ -32,6 +69,7 @@ export default defineEventHandler(async (event) => {
 
     name = emptyStringToNull(name)
     description = emptyStringToNull(description)
+    // (Você pode adicionar sua função toISODate aqui se precisar converter date_end_at)
 
     const { data, error } = await supabase
       .from('roadmaps')
@@ -42,8 +80,13 @@ export default defineEventHandler(async (event) => {
     if (error) {
       throw createError({ statusCode: 500, statusMessage: error.message })
     }
+
+    // --- NOVO: FORMATAÇÃO (para o item único) ---
+    const formattedData = formatRoadmapDates(data);
+    // --- FIM DA FORMATAÇÃO ---
+    
     return {
-      data,
+      data: formattedData, // <-- Retorna o item formatado
       message: 'Roadmap criado com sucesso',
       status: true
     }

@@ -41,6 +41,10 @@ export default defineComponent({
     // Acompanhar se o estado do modal for alterado fora
     watch(() => props.modelValue, (newVal) => {
       isOpen.value = newVal;
+      // Se o modal está ABRINDO
+      if (newVal === true) {
+        getActivities(); // CHAMA AQUI!
+      }
     });
 
     watch(() => props.task, (newVal) => {
@@ -48,16 +52,52 @@ export default defineComponent({
     });
 
     const getActivities = async () => {
+        // --- 1. A SOLUÇÃO "CINTO DE SEGURANÇA" ---
+        // Se não houver ID, nem tenta.
+        if (!task.value || !task.value.id) {
+            console.warn('getActivities pulado: task.id ainda não está disponível.');
+            activities.value = []; // Limpa atividades antigas
+            loading.value = false; // Para o loading
+            return;
+        }
+        // --- FIM DA SOLUÇÃO ---
+
         try {
+            loading.value = true; // Inicia o loading aqui
             const response = await fetch(`/api/activities?task_id=${task.value.id}`);
             const data = await response.json();
+            
             if(!data.error) {
                 activities.value = data;
             }
-            loading.value = false;
         } catch(error) {
             console.log(error)
+        } finally {
+            loading.value = false; // Para o loading no fim
         }
+    }
+
+    const finishTask = async () => {
+      try {
+          const response = await fetch(`/api/tasks/finished/${task.value.id}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' }
+          });
+
+          if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.message || 'Erro ao concluir a tarefa');
+          }
+
+          const data = await response.json();
+          alert(data.message);
+          
+          emit('task-updated');
+          emit('update:modelValue', false);
+
+      } catch (error) {
+          console.error('Erro em updateTask:', error);
+      }
     }
 
     // Fechar se o usuário clicar fora do modal (em um fundo opaco)
@@ -72,10 +112,6 @@ export default defineComponent({
       emit(`task-updated`);
     }
 
-    onMounted(() => {
-      getActivities()
-    })
-
     return {
       isOpen,
       closeModal,
@@ -85,7 +121,8 @@ export default defineComponent({
       activities,
       loading,
       updatedTask,
-      getActivities
+      getActivities,
+      finishTask
     };
   },
 });
@@ -101,7 +138,10 @@ export default defineComponent({
       class="w-[800px] bg-white rounded-lg shadow-lg p-[30px] relative max-h-[90vh] overflow-hidden flex flex-col"
     >
       <!-- Cabeçalho do modal -->
-      <div class="text-xl font-semibold mb-2">{{ task.name }}</div>
+      <div class="flex flex-col mb-2">
+        <div class="text-xl font-semibold">{{ task.name }}</div>
+        <span class="text-sm font-[500]">ID: {{ task.id }}</span>
+      </div>
 
       <!-- Conteúdo rolável do modal -->
       <div class="overflow-y-auto flex-1">
@@ -112,14 +152,15 @@ export default defineComponent({
                 <div class="flex flex-col">
                   <div class="flex items-center">
                     <span class="text-[0.9rem]">Data de criação:</span>
-                    <span class="text-sm ml-2">{{ task.created_at }}</span>
+                    <span class="text-sm ml-2">{{ task.created_at_formatted }}</span>
                   </div>
                   <div class="flex items-center">
                     <span class="text-[0.9rem]">Data de entrega:</span>
-                    <span class="text-sm ml-2">{{ task.planned_at }}</span>
+                    <span class="text-sm ml-2">{{ task.planned_at_formatted }}</span>
                   </div>
                   <div class="flex items-center mt-2">
                     <Button @click="isEditTaskModal = true" label="Editar" color="bg-blue-700 text-white" />
+                    <Button @click="finishTask()" label="Concluir" color="bg-red-700 text-white" class="ml-3" />
                   </div>
                 </div>
               </div>
@@ -151,7 +192,7 @@ export default defineComponent({
                             <template v-for="activity in activities" :key="activity.id">
                               <div class="col-span-1 p-2 shadow text-sm bg-white">
                                 <div class="flex flex-col">
-                                  <span class="text-[0.75rem]">{{ activity.created_at }}</span>
+                                  <span class="text-[0.75rem]">{{ activity.created_at_formatted }}</span>
                                   <p class="mt-1 font-[600]">
                                     {{ activity.name }}
                                   </p>
@@ -171,7 +212,12 @@ export default defineComponent({
                   </div>
                 </div>
               </div>
+              <!---->
+              <div v-else class="col-span-1 mt-4 flex justify-center items-center">
+                    <div class="meu-spinner"></div>
+                </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -203,4 +249,18 @@ export default defineComponent({
   div.fixed {
     animation: fadeIn 0.3s ease-in-out;
   }
+
+  .meu-spinner {
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top: 4px solid #4F516C;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
 </style>

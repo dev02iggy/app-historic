@@ -61,6 +61,9 @@
                                     <p class="text-center">
                                         {{ note.details }}
                                     </p>
+                                    <p class="text-center text-[0.8rem] font-[500]">
+                                        Criado em {{ note.created_at_formatted }}
+                                    </p>
                                 </div>
                             </div>
                             <div class="col-span-1 mt-4 bg-white p-4">

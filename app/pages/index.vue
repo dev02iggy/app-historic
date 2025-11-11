@@ -2,22 +2,36 @@
     const router = useRouter();
     const isLoginModal = ref<boolean>(false);
     const { notify } = useNotification();
-
-    function onClick() {
-        notify({
-            title: "Title",
-            text: "Hello notify!",
-        });
-    }
     const formdata = ref<any>({
         email: null,
         password: null
     })
-    const send = () => {
-        alert(`kkkk`)
+    const login = () => {
+        const email = formdata.value.email;
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+        if (!email) {
+            notify({
+                title: "Erro ao logar:",
+                text: "O e-mail precisa ser definido!",
+                type: 'error'
+            });
+            return;
+        }
+
+        if (!emailRegex.test(email)) {
+            notify({
+                title: "E-mail inválido:",
+                text: "Por favor, digite um e-mail com formato válido (ex: email@dominio.com)",
+                type: 'error'
+            });
+            return;
+        }
+
+        isLoginModal.value = true;
     }
-    const goRouter = () => {
-        router.push(`/tarefas`)
+    const goRouter = (url: string) => {
+        router.push(url)
     }
 </script>
 <template>
@@ -36,16 +50,16 @@
                     </div>
                     <div class="col-span-1 mt-4">
                         <div class="flex items-center justify-end">
-                            <Button @click.prevent="onClick" label="Redefinir senha" color="bg-gray-600" class="mr-3" />
-                            <Button @click.prevent="isLoginModal = true" label="Entrar" color="bg-green-700" />
+                            <Button label="Redefinir senha" color="bg-gray-600" class="mr-3" />
+                            <Button @click.prevent="login" label="Entrar" color="bg-green-700" />
                         </div>
                         <div class="flex justify-center mt-2">
-                            <Button label="Cadastrar-me" :isFlat="false" />
+                            <Button @click.prevent="goRouter(`/cadastrar`)" label="Cadastrar-me" :isFlat="false" />
                         </div>
                     </div>
                 </form>
             </div>
         </div>
     </main>
-    <LoginModal v-model="isLoginModal" />
+    <LoginModal v-model="isLoginModal" :email="formdata.email" />
 </template>
